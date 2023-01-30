@@ -35,7 +35,7 @@ Nuestro modelo de datos objetivo es un modelo relacional normalizado 3NF, que fu
 
 La siguiente imagen muestra el modelo lógico de la base de datos:
 
-[Modelo de Datos](images/Modelo-Datos.png)
+<img width=2000 src="Modelo-Datos.png"/>
 
 Nota: Los campos como *compliment_* son sólo marcadores de posición para múltiples campos con el mismo prefijo (*compliment*). Esto se hace para reducir visualmente la longitud de las tablas.
 
@@ -180,7 +180,6 @@ pueden manejar enormes cantidades de datos. Con el tiempo, habría que escalarlo
 - Crear un bucket S3.
 - Asegúrese de que el bucket se encuentra en la misma región que sus clústeres de Amazon EMR y Redshift.
 - Ten cuidado con los permisos de lectura: puedes acabar pagando muchos gastos en transferencias de datos.
-- Opción 1:
 - Descargue [Yelp Dataset](https://www.yelp.com/dataset/download) y súbalo directamente a su bucket de S3 (carpeta `yelp_dataset`).
 - Descargue el archivo JSON de [U.S. City Demographic Data](https://public.opendatasoft.com/explore/dataset/us-cities-demographics/export/)
 - Súbalo a una carpeta separada (`demo_dataset`) en tu bucket de S3.
