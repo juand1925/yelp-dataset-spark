@@ -35,7 +35,7 @@ Nuestro modelo de datos objetivo es un modelo relacional normalizado 3NF, que fu
 
 La siguiente imagen muestra el modelo lógico de la base de datos:
 
-<img width=2000 src="Modelo-Datos.png"/>
+<img width=2000 src="images/Modelo-Datos.png"/>
 
 Nota: Los campos como *compliment_* son sólo marcadores de posición para múltiples campos con el mismo prefijo (*compliment*). Esto se hace para reducir visualmente la longitud de las tablas.
 
