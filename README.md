@@ -17,7 +17,7 @@ Para que la contribución fuera única, el conjunto de datos de Yelp se enriquec
 
 ### SET DE DATOS DE YELP
 
-El conjunto de datos [Yelp Dataset](https://www.yelp.com/dataset/download) es un subconjunto de negocios, reseñas y datos de usuarios de Yelp, disponible para uso académico. El conjunto de datos (a fecha de 13.08.2019) ocupa 9 GB de espacio en disco (descomprimido) y cuenta con 6.685.900 reseñas, 192.609 negocios en más de 10 áreas metropolitanas, más de 1,2 millones de atributos de negocios como horarios, aparcamiento, disponibilidad y ambiente, 1.223.094 propinas de 1.637.138 usuarios y check-ins agregados a lo largo del tiempo. Cada archivo se compone de un único tipo de objeto, un objeto JSON por línea. Para más detalles sobre
+El conjunto de datos [Yelp Dataset](https://www.yelp.com/dataset/download) es un subconjunto de negocios, reseñas y datos de usuarios de Yelp, disponible para uso académico. El conjunto de datos ocupa 9 GB de espacio en disco (descomprimido) y cuenta con 6.685.900 reseñas, 192.609 negocios en más de 10 áreas metropolitanas, más de 1,2 millones de atributos de negocios como horarios, aparcamiento, disponibilidad y ambiente, 1.223.094 propinas de 1.637.138 usuarios y check-ins agregados a lo largo del tiempo. Cada archivo se compone de un único tipo de objeto, un objeto JSON por línea. Para más detalles sobre
 la estructura del conjunto de datos, consulte [Documentación JSON del conjunto de datos de Yelp](https://www.yelp.com/dataset/documentation/main).
 
 ### DATOS DEMOGRÁFICOS DE LAS CIUDADES DE EE.UU.
@@ -31,7 +31,7 @@ Los [Datos Meteorológicos Históricos por Hora](https://www.kaggle.com/datasets
 
 ## MODELO Y DICCIONARIO DE DATOS
 
-Nuestro modelo de datos objetivo es un modelo relacional normalizado 3NF, que fue diseñado para ser neutral a diferentes tipos de consultas analíticas. Los datos deben depender de la clave [1NF], de toda la clave [2NF] y de nada más que la clave [3NF]. Las formas más allá de 4NF son principalmente de interés académico. 
+Nuestro modelo de datos objetivo es un modelo relacional normalizado 3NF, que fue diseñado para ser neutral a diferentes tipos de consultas analíticas. Los datos deben depender de la clave [1NF], de toda la clave [2NF] y de nada más que la clave [3NF]. 
 
 La siguiente imagen muestra el modelo lógico de la base de datos:
 
@@ -39,7 +39,7 @@ La siguiente imagen muestra el modelo lógico de la base de datos:
 
 Nota: Los campos como *compliment_* son sólo marcadores de posición para múltiples campos con el mismo prefijo (*compliment*). Esto se hace para reducir visualmente la longitud de las tablas.
 
-El modelo consta de 15 tablas como resultado de normalizar y unir 6 tablas proporcionadas por Yelp, 1 tabla con información demográfica y 2 tablas con información meteorológica. El esquema se acerca más a un esquema Snowflake, ya que hay dos tablas de hechos - *reviews* y *tips* - y muchas tablas  dimensionales con múltiples niveles de jerarquía y relaciones de muchos a muchos. Algunas tablas conservan sus claves nativas, mientras que para otras se han generado identificadores monótonamente crecientes. Regla de oro: Utilice claves generadas para las entidades y claves compuestas para las relaciones. Además, las marcas de tiempo y las fechas se convirtieron a los tipos de datos nativos de Spark para poder importarlas a Amazon Redshift en un formato correcto.
+El modelo consta de 15 tablas como resultado de normalizar y unir 6 tablas proporcionadas por Yelp, 1 tabla con información demográfica y 2 tablas con información meteorológica. El esquema se acerca más a un esquema Copo de Nieve, ya que hay dos tablas de hechos - *reviews* y *tips* - y muchas tablas  dimensionales con múltiples niveles de jerarquía y relaciones de muchos a muchos. Regla de oro: Utilice claves generadas para las entidades y claves compuestas para las relaciones. Además, las marcas de tiempo y las fechas se convirtieron a los tipos de datos nativos de Spark para poder importarlas a Amazon Redshift en un formato correcto.
 
 Para obtener más información sobre tablas y campos, visite [Yelp Dataset JSON](https://www.yelp.com/dataset/documentation/main) o consulte [Redshift table definitions](https://github.com/juand1925/yelp-dataset-spark/blob/master/airflow/dags/configs/table_definitions.yml).
 
@@ -51,18 +51,15 @@ La tabla más consultada del modelo. Contiene el nombre del negocio, la califica
 
 #### *atributos_empresariales*
 
-Esta fue la parte más complicada de la remodelación, ya que Yelp guardaba los atributos de las empresas como dict anidados. Todos los campos de la tabla de origen eran cadenas, por lo que había que convertirlos en sus respectivos tipos de datos. Algunos valores estaban sucios, por ejemplo, los campos booleanos pueden ser `"True"`, `"False"`,
-`"None"` y `None`, mientras que algunos campos de cadena tenían formato unicode doble `u "u'string'"`. Además, algunos campos eran dicts formateados como cadenas. La estructura JSON anidada de tres niveles resultante debía aplanarse.
+Esta fue la parte más complicada de la remodelación, ya que Yelp guardaba los atributos de las empresas como dict anidados. Todos los campos de la tabla de origen eran cadenas, por lo que había que convertirlos en sus respectivos tipos de datos. Algunos valores estaban sucios, por ejemplo, los campos booleanos pueden ser `"True"`, `"False"`, `"None"` y `None`, mientras que algunos campos de string tenían formato unicode doble `u "u'string'"`. Además, algunos campos eran dicts formateados como strings. La estructura JSON anidada de tres niveles resultante debía aplanarse.
 
 #### *categorías_de_negocio* y *categorías*.
 
-En la tabla original, las categorías de negocio se almacenaban como una matriz. La mejor solución era externalizarlas en una tabla independiente. Una forma de hacerlo es asignar una columna a cada categoría, pero ¿y si vamos a añadir una nueva categoría más adelante? Entonces debemos actualizar toda la tabla para reflejar el cambio, lo que supone una clara violación de la 3NF, según la cual las columnas no deben tener relaciones de función transitorias. Así pues, creemos dos tablas: *categories*, que contiene categorías codificadas por sus ids, y *business_categories*, que
-contiene tuplas de ids de negocio e ids de categoría.
+En la tabla original, las categorías de negocio se almacenaban como una matriz. La mejor solución era externalizarlas en una tabla independiente. Una forma de hacerlo es asignar una columna a cada categoría, pero ¿y si vamos a añadir una nueva categoría más adelante? Entonces debemos actualizar toda la tabla para reflejar el cambio, lo que supone una clara violación de la 3NF, según la cual las columnas no deben tener relaciones de función transitorias. Así pues, creemos dos tablas: *categories*, que contiene categorías codificadas por sus ids, y *business_categories*, que contiene tuplas de ids de negocio e ids de categoría.
 
 #### *horario_comercial*
 
-Los horarios comerciales se almacenaban como un dict en el que cada clave es el día de la semana y el valor es una cadena con el formato `"hora:minuto-hora:minuto"`. La mejor forma de hacer que la representación de los datos sea neutral para las consultas es dividir las partes "desde la hora" y "hasta la hora" en columnas separadas y combinar
-"hora" y "minuto" en un único campo de tipo entero, por ejemplo `"10:00-21:00"` en `1000` y `2100` respectivamente. De esta forma podríamos formular fácilmente la siguiente consulta:
+Los horarios comerciales se almacenaban como un dict en el que cada clave es el día de la semana y el valor es una cadena con el formato `"hora:minuto-hora:minuto"`. La mejor forma de hacer que la representación de los datos sea neutral para las consultas es dividir las partes "desde la hora" y "hasta la hora" en columnas separadas y combinar "hora" y "minuto" en un único campo de tipo entero, por ejemplo `"10:00-21:00"` en `1000` y `2100` respectivamente. De esta forma podríamos formular fácilmente la siguiente consulta:
 
 ```sql
 -- Encontrar comercios abiertos el domingo a las 20:00 horas
@@ -91,8 +88,7 @@ La tabla *reviews* contiene los datos completos del texto de la opinión, incluy
 
 #### *users*, *elite_years* y *friends*
 
-Originalmente, los datos de usuario incluyen la asignación de amigos del usuario y todos los metadatos asociados al usuario. Pero como los campos `friends` y son matrices, se han convertido en relaciones separadas en nuestro modelo, ambas estructuradas de forma similar a la tabla *business_categories* y con claves primarias compuestas. El formato de
-la tabla *friends* es muy práctico, ya que puede introducirse directamente en la API GraphX de Apache Spark para construir un gráfico social de los usuarios de Yelp.
+Originalmente, los datos de usuario incluyen la asignación de amigos del usuario y todos los metadatos asociados al usuario. Pero como los campos `friends` y son matrices, se han convertido en relaciones separadas en nuestro modelo, ambas estructuradas de forma similar a la tabla *business_categories* y con claves primarias compuestas. El formato de la tabla *friends* es muy práctico, ya que puede introducirse directamente en la API GraphX de Apache Spark para construir un gráfico social de los usuarios de Yelp.
 
 #### *consejos*
 
